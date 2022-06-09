@@ -45,10 +45,10 @@ func SkipIfEmptyAny(skip func(string, ...int), object ...interface{}) {
 		if s.Kind() != reflect.Slice && s.Kind() != reflect.Map {
 			panic("SkipIfEmpty was given a non slice/map type")
 		}
+	}
 
-		if s.Len() == 0 {
-			skip(fmt.Sprintf("Test skipped because there are no %s to test, please check under test labels", reflect.TypeOf(o)))
-		}
+	if len(object) == 0 {
+		skip(fmt.Sprintf("Test skipped because there are no %s to test, please check under test labels", reflect.TypeOf(object)))
 	}
 }
 
