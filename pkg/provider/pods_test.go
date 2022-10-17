@@ -15,3 +15,23 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package provider
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func TestPodString(t *testing.T) {
+	p := Pod{
+		Pod: &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test1",
+				Namespace: "testNS",
+			},
+		},
+	}
+	assert.Equal(t, "pod: test1 ns: testNS", p.String())
+}

@@ -15,3 +15,24 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package provider
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func TestStatefulsetToString(t *testing.T) {
+	ss := StatefulSet{
+		StatefulSet: &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test1",
+				Namespace: "testNS",
+			},
+		},
+	}
+
+	assert.Equal(t, "statefulset: test1 ns: testNS", ss.ToString())
+}
