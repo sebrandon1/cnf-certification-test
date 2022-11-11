@@ -20,7 +20,6 @@ require (
 	github.com/mittwald/go-helm-client v0.11.5
 	github.com/onsi/ginkgo/v2 v2.5.0
 	github.com/openshift/api v0.0.0-20220124143425-d74727069f6f
-	github.com/openshift/client-go v0.0.0-20211209144617-7385dd6338e3
 	github.com/operator-framework/api v0.17.1
 	github.com/operator-framework/operator-lifecycle-manager v0.20.0
 	github.com/pkg/errors v0.9.1 // indirect
@@ -131,7 +130,6 @@ require (
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220930163606-c98284e70a91 // indirect
 	google.golang.org/grpc v1.49.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -159,7 +157,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/openshift/machine-config-operator v0.0.0-00010101000000-000000000000
 	github.com/test-network-function/cnfextensions v0.0.0-20220908220149-566dd6fe6b0e
-	github.com/test-network-function/privileged-daemonset v0.0.4
+	github.com/test-network-function/privileged-daemonset v0.0.5
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/kubectl v0.25.4
 )
