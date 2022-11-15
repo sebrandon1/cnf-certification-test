@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"time"
 
+	ocptypesv1 "github.com/openshift/api/apps/v1"
 	configv1 "github.com/openshift/api/config/v1"
 	clientconfigv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	olmv1Alpha "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -69,6 +70,7 @@ type DiscoveredTestData struct {
 	AllInstallPlans        []*olmv1Alpha.InstallPlan
 	AllCatalogSources      []*olmv1Alpha.CatalogSource
 	Deployments            []appsv1.Deployment
+	DeploymentConfigs      []ocptypesv1.DeploymentConfig
 	StatefulSet            []appsv1.StatefulSet
 	PersistentVolumes      []corev1.PersistentVolume
 	PersistentVolumeClaims []corev1.PersistentVolumeClaim
@@ -166,6 +168,7 @@ func DoAutoDiscover() DiscoveredTestData {
 
 	data.K8sVersion = k8sVersion.GitVersion
 	data.Deployments = findDeploymentByLabel(oc.K8sClient.AppsV1(), data.TestData.TargetPodLabels, data.Namespaces)
+	data.DeploymentConfigs = findDeploymentConfigsByLabel(oc.OcpAppsClient, data.TestData.TargetPodLabels, data.Namespaces)
 	data.StatefulSet = findStatefulSetByLabel(oc.K8sClient.AppsV1(), data.TestData.TargetPodLabels, data.Namespaces)
 	data.Hpas = findHpaControllers(oc.K8sClient, data.Namespaces)
 	data.Nodes, err = oc.K8sClient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})

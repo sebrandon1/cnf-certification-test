@@ -73,7 +73,8 @@ type TestEnvironment struct { // rename this with testTarget
 	AllPods   []*Pod                 `json:"AllPods"`
 
 	// Deployment Groupings
-	Deployments []*Deployment `json:"testDeployments"`
+	Deployments       []*Deployment       `json:"testDeployments"`
+	DeploymentConfigs []*DeploymentConfig `json:"testDeploymentConfigs"`
 
 	// StatefulSet Groupings
 	StatefulSets []*StatefulSet `json:"testStatefulSets"`

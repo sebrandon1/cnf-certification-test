@@ -51,6 +51,27 @@ var WaitForDeploymentSetReady = func(ns, name string, timeout time.Duration) boo
 	return false
 }
 
+var WaitForDeploymentConfigSetReady = func(ns, name string, timeout time.Duration) bool {
+	logrus.Trace("check if deployment ", ns, ":", name, " is ready ")
+	clients := clientsholder.GetClientsHolder()
+	start := time.Now()
+	for time.Since(start) < timeout {
+		dp, err := provider.GetUpdatedDeploymentConfig(clients.OcpAppsClient, ns, name)
+		if err != nil {
+			logrus.Errorf("Error while getting deploymentConfig %s (ns: %s), err: %v", name, ns, err)
+		} else if !dp.IsDeploymentConfigReady() {
+			logrus.Errorf("%s is not ready yet", dp.ToString())
+		} else {
+			logrus.Tracef("%s is ready!", dp.ToString())
+			return true
+		}
+
+		time.Sleep(time.Second)
+	}
+	logrus.Error("deployment ", ns, ":", name, " is not ready ")
+	return false
+}
+
 func WaitForStatefulSetReady(ns, name string, timeout time.Duration) bool {
 	logrus.Trace("check if statefulset ", ns, ":", name, " is ready ")
 	clients := clientsholder.GetClientsHolder()

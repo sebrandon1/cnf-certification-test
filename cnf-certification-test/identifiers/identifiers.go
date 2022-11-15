@@ -120,6 +120,7 @@ var (
 	TestStartupIdentifier                    claim.Identifier
 	TestShutdownIdentifier                   claim.Identifier
 	TestDpdkCPUPinningExecProbe              claim.Identifier
+	TestDeploymentConfigScalingIdentifier    claim.Identifier
 )
 
 //nolint:funlen
@@ -239,6 +240,21 @@ https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks`,
 		common.NetworkingTestKey,
 		`If a CNF is doing CPI pinning, exec probes may not be used.`,
 		DpdkCPUPinningExecProbeRemediation,
+		InformativeResult,
+		NoDocumentedProcess,
+		VersionOne,
+		bestPracticeDocV1dot4URL+" Section 4.6.24",
+		TagExtended)
+
+	TestDeploymentConfigScalingIdentifier = AddCatalogEntry(
+		"deployment-config-scaling",
+		common.LifecycleTestKey,
+		`Tests that CNF deploymentConfigs support scale in/out operations.
+		First, The test starts getting the current replicaCount (N) of the deploymentConfig/s with the Pod Under Test. Then, it executes the
+		scale-in oc command for (N-1) replicas. Lastly, it executes the scale-out oc command, restoring the original replicaCount of the deployment/s.
+		In case of deploymentConfigs that are managed by HPA the test is changing the min and max value to deploymentConfig Replica - 1 during scale-in and the
+		original replicaCount again for both min/max during the scale-out stage. lastly its restoring the original min/max replica of the deploymentConfig/s`,
+		DeployConfigScalingRemediation,
 		InformativeResult,
 		NoDocumentedProcess,
 		VersionOne,

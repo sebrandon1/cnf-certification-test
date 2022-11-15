@@ -136,6 +136,7 @@ var _ = ginkgo.Describe(common.LifecycleTestKey, func() {
 			}
 			testDeploymentScaling(&env, timeout)
 		})
+
 		testID, tags = identifiers.GetGinkgoTestIDAndLabels(identifiers.TestStateFulSetScalingIdentifier)
 		ginkgo.It(testID, ginkgo.Label(tags...), func() {
 			testhelper.SkipIfEmptyAny(ginkgo.Skip, env.StatefulSets)
@@ -145,6 +146,17 @@ var _ = ginkgo.Describe(common.LifecycleTestKey, func() {
 				ginkgo.Skip("Skipping statefulset scaling test because invalid number of available workers.")
 			}
 			testStatefulSetScaling(&env, timeout)
+		})
+
+		testID, tags = identifiers.GetGinkgoTestIDAndLabels(identifiers.TestDeploymentConfigScalingIdentifier)
+		ginkgo.It(testID, ginkgo.Label(tags...), func() {
+			testhelper.SkipIfEmptyAny(ginkgo.Skip, env.DeploymentConfigs)
+			if env.GetWorkerCount() < minWorkerNodesForLifecycle {
+				// Note: We skip this test because 'testHighAvailability' in the lifecycle suite is already
+				// testing the replicas and antiaffinity rules that should already be in place for deployments.
+				ginkgo.Skip("Skipping deploymentConfig scaling test because invalid number of available workers.")
+			}
+			testDeploymentConfigScaling(&env, timeout)
 		})
 	}
 
@@ -365,6 +377,42 @@ func testStatefulSetScaling(env *provider.TestEnvironment, timeout time.Duration
 	}
 
 	testhelper.AddTestResultLog("Non-compliant", failedStatefulSets, tnf.ClaimFilePrintf, ginkgo.Fail)
+}
+
+func testDeploymentConfigScaling(env *provider.TestEnvironment, timeout time.Duration) {
+	ginkgo.By("Testing deploymentConfig scaling")
+	defer env.SetNeedsRefresh()
+	failedDeploymentConfigs := []string{}
+	for i := range env.Deployments {
+		// Skip deployment if it is allowed by config
+		if nameInDeploymentSkipList(env.DeploymentConfigs[i].Name, env.DeploymentConfigs[i].Namespace, env.Config.SkipScalingTestDeployments) {
+			tnf.ClaimFilePrintf("%s is being skipped due to configuration setting", env.Deployments[i].String())
+			continue
+		}
+
+		// TestDeploymentConfigScaling test scaling of deployment
+		// This is the entry point for deploymentConfig scaling tests
+		ns, name := env.DeploymentConfigs[i].Namespace, env.DeploymentConfigs[i].Name
+		key := ns + name
+		if hpa, ok := env.HorizontalScaler[key]; ok {
+			// if the deployment is controller by
+			// horizontal scaler, then test that scaler
+			// can scale the deployment
+			if !scaling.TestScaleHpaDeploymentConfig(env.DeploymentConfigs[i], hpa, timeout) {
+				failedDeploymentConfigs = append(failedDeploymentConfigs, env.DeploymentConfigs[i].ToString())
+				tnf.ClaimFilePrintf("Deployment has failed the HPA scale test: %s", env.DeploymentConfigs[i].ToString())
+			}
+			continue
+		}
+		// if the deployment is not controller by HPA
+		// scale it directly
+		if !scaling.TestScaleDeployment(env.Deployments[i].Deployment, timeout) {
+			failedDeploymentConfigs = append(failedDeploymentConfigs, env.Deployments[i].ToString())
+			tnf.ClaimFilePrintf("DeploymentConfig has failed the non-HPA scale test: %s", env.DeploymentConfigs[i].ToString())
+		}
+	}
+
+	testhelper.AddTestResultLog("Non-compliant", failedDeploymentConfigs, tnf.ClaimFilePrintf, ginkgo.Fail)
 }
 
 // testHighAvailability

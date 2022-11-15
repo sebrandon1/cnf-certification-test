@@ -191,4 +191,6 @@ const (
 	ContainerPortNameFormatRemediation = `Ensure that the container's ports name follow our partner naming conventions`
 
 	DpdkCPUPinningExecProbeRemediation = "If the CNF is doing CPU pinning and running a DPDK process do not use exec probes (executing a command within the container) as it may pile up and block the node eventually."
+
+	DeployConfigScalingRemediation = `Ensure CNF deploymentConfig/replica sets can scale in/out successfully.`
 )

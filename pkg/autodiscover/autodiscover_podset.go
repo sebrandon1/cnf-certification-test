@@ -23,6 +23,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	scalingv1 "k8s.io/api/autoscaling/v1"
 
+	ocptypesv1 "github.com/openshift/api/apps/v1"
+	clientappsv1 "github.com/openshift/client-go/apps/clientset/versioned/typed/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	appv1client "k8s.io/client-go/kubernetes/typed/apps/v1"
@@ -36,6 +38,16 @@ func FindDeploymentByNameByNamespace(appClient appv1client.AppsV1Interface, name
 	}
 	return dp, nil
 }
+
+func FindDeploymentConfigByNameByNamespace(appClient clientappsv1.AppsV1Interface, namespace, name string) (*ocptypesv1.DeploymentConfig, error) {
+	dp, err := appClient.DeploymentConfigs(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		logrus.Error("Cannot retrieve deploymentConfig in ns=", namespace, " name=", name)
+		return nil, err
+	}
+	return dp, nil
+}
+
 func FindStatefulsetByNameByNamespace(appClient appv1client.AppsV1Interface, namespace, name string) (*appsv1.StatefulSet, error) {
 	ss, err := appClient.StatefulSets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -43,6 +55,35 @@ func FindStatefulsetByNameByNamespace(appClient appv1client.AppsV1Interface, nam
 		return nil, err
 	}
 	return ss, nil
+}
+
+func findDeploymentConfigsByLabel(appClient clientappsv1.AppsV1Interface, labels []configuration.Label, namespaces []string) []ocptypesv1.DeploymentConfig {
+	deployConfigs := []ocptypesv1.DeploymentConfig{}
+	for _, ns := range namespaces {
+		dpcs, err := appClient.DeploymentConfigs(ns).List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			logrus.Errorf("Failed to list deploymentConfigs in ns=%s, err: %v . Trying to proceed.", ns, err)
+			continue
+		}
+
+		if len(dpcs.Items) == 0 {
+			logrus.Warnf("Did not find any deployments in ns=%s", ns)
+		}
+
+		for i := 0; i < len(dpcs.Items); i++ {
+			for _, l := range labels {
+				key, value := buildLabelKeyValue(l)
+				if dpcs.Items[i].Spec.Template.ObjectMeta.Labels[key] == value {
+					deployConfigs = append(deployConfigs, dpcs.Items[i])
+					logrus.Infof("DeploymentConfig %s found in ns %s", dpcs.Items[i].Name, ns)
+				}
+			}
+		}
+	}
+	if len(deployConfigs) == 0 {
+		logrus.Warnf("Did not find any deploymentConfigs in the configured namespaces %v", namespaces)
+	}
+	return deployConfigs
 }
 
 //nolint:dupl

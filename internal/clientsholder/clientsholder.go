@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
+	clientappsv1 "github.com/openshift/client-go/apps/clientset/versioned/typed/apps/v1"
 	clientconfigv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 	olmClient "github.com/operator-framework/operator-lifecycle-manager/pkg/api/client/clientset/versioned"
 	olmFakeClient "github.com/operator-framework/operator-lifecycle-manager/pkg/api/client/clientset/versioned/fake"
@@ -51,6 +52,7 @@ type ClientsHolder struct {
 	APIExtClient         apiextv1.Interface
 	OlmClient            olmClient.Interface
 	OcpClient            clientconfigv1.ConfigV1Interface
+	OcpAppsClient        clientappsv1.AppsV1Interface
 	K8sClient            kubernetes.Interface
 	K8sNetworkingClient  networkingv1.NetworkingV1Interface
 	MachineCfg           ocpMachine.Interface
@@ -253,6 +255,10 @@ func newClientsHolder(filenames ...string) (*ClientsHolder, error) { //nolint:fu
 		return nil, fmt.Errorf("cannot instantiate MachineCfg client: %s", err)
 	}
 	clientsHolder.K8sNetworkingClient, err = networkingv1.NewForConfig(clientsHolder.RestConfig)
+	if err != nil {
+		return nil, fmt.Errorf("cannot instantiate k8s networking client: %s", err)
+	}
+	clientsHolder.OcpAppsClient, err = clientappsv1.NewForConfig(clientsHolder.RestConfig)
 	if err != nil {
 		return nil, fmt.Errorf("cannot instantiate k8s networking client: %s", err)
 	}
