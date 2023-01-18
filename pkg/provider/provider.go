@@ -42,6 +42,7 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -78,7 +79,6 @@ type TestEnvironment struct { // rename this with testTarget
 
 	// Deployment Groupings
 	Deployments []*Deployment `json:"testDeployments"`
-
 	// StatefulSet Groupings
 	StatefulSets []*StatefulSet `json:"testStatefulSets"`
 
@@ -90,10 +90,9 @@ type TestEnvironment struct { // rename this with testTarget
 	PersistentVolumes      []corev1.PersistentVolume
 	PersistentVolumeClaims []corev1.PersistentVolumeClaim
 
-	Config    configuration.TestConfiguration
-	variables configuration.TestParameters
-	Crds      []*apiextv1.CustomResourceDefinition `json:"testCrds"`
-
+	Config                 configuration.TestConfiguration
+	variables              configuration.TestParameters
+	Crds                   []*apiextv1.CustomResourceDefinition          `json:"testCrds"`
 	HorizontalScaler       map[string]*scalingv1.HorizontalPodAutoscaler `json:"testHorizontalScaler"`
 	Services               []*corev1.Service                             `json:"testServices"`
 	Nodes                  map[string]Node                               `json:"-"`
@@ -131,6 +130,11 @@ type cniNetworkInterface struct {
 	Default    bool                   `json:"default"`
 	DNS        map[string]interface{} `json:"dns"`
 	DeviceInfo deviceInfo             `json:"device-info"`
+}
+
+type Scaleobject struct {
+	Scale               CrScale
+	GroupResourceSchema schema.GroupResource
 }
 
 type deviceInfo struct {
@@ -207,6 +211,7 @@ func buildTestEnvironment() { //nolint:funlen
 	env.AllOperators = createOperators(data.AllCsvs, data.AllSubscriptions, data.AllInstallPlans, data.AllCatalogSources, true, false, false)
 	env.AllOperatorsSummary = getSummaryAllOperators(env.AllOperators)
 	env.Namespaces = data.Namespaces
+
 	env.variables = data.Env
 	env.Nodes = createNodes(data.Nodes.Items)
 	env.IstioServiceMesh = data.Istio
@@ -260,6 +265,8 @@ func buildTestEnvironment() { //nolint:funlen
 		}
 		env.StatefulSets = append(env.StatefulSets, aNewStatefulSet)
 	}
+
+	env.ScaleCrUndetTest = updateCrUnderTest(data.ScaleCrUndetTest)
 	env.HorizontalScaler = data.Hpas
 	env.StorageClassList = data.StorageClasses
 
@@ -278,6 +285,16 @@ func buildTestEnvironment() { //nolint:funlen
 		}
 	}
 	logrus.Infof("Completed the test environment build process in %.2f seconds", time.Since(start).Seconds())
+}
+
+func updateCrUnderTest(scaleCrUndetTest []autodiscover.Scaleobject) []Scaleobject {
+	var scaleCrUndetTesttTemp []Scaleobject
+	for i := range scaleCrUndetTest {
+		aNewScaleCrUndetTest := Scaleobject{Scale: CrScale{scaleCrUndetTest[i].Scale},
+			GroupResourceSchema: scaleCrUndetTest[i].GroupResourceSchema}
+		scaleCrUndetTesttTemp = append(scaleCrUndetTesttTemp, aNewScaleCrUndetTest)
+	}
+	return scaleCrUndetTesttTemp
 }
 
 func getPodContainers(aPod *corev1.Pod, useIgnoreList bool) (containerList []*Container) {
