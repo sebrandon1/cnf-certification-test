@@ -1,4 +1,4 @@
-name: Test Incoming Changes
+name: Self Hosted Incoming Changes
 
 on:
   push:
@@ -28,31 +28,36 @@ env:
 jobs:
   lint:
     name: Run Linter and Vet
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     env:
       SHELL: /bin/bash
-      KUBECONFIG: '/home/runner/.kube/config'
-      PFLT_DOCKERCONFIG: '/home/runner/.docker/config'
+      KUBECONFIG: '/home/tnf/.kube/config'
+      PFLT_DOCKERCONFIG: '/home/tnf/.docker/config'
 
     steps:
-      - name: Write temporary docker file
-        run: |
-          mkdir -p /home/runner/.docker
-          touch ${PFLT_DOCKERCONFIG}
-          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
-
-      - name: Set up Go 1.20
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.20.2
-
-      - name: Disable default go problem matcher
-        run: echo "::remove-matcher owner=go::"
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
         with:
           ref: ${{ github.sha }}
+
+      # - name: Setup the 'step' with shared resources
+      #   uses: ./.github/actions/setup
+
+      - name: Write temporary docker file
+        run: |
+          mkdir -p /home/tnf/.docker
+          touch ${PFLT_DOCKERCONFIG}
+          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
+        shell: bash
+
+      - name: Set up Go 1.20
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.1
+
+      - name: Disable default go problem matcher
+        run: echo "::remove-matcher owner=go::"
+        shell: bash
 
       # TODO: golangci-lint team recommends using a GitHub Action to perform golangci-lint responsibilities.  However
       # there does not appear to be a way to honor our existing .golangci.yml.  For now, mimic developer behavior.
@@ -67,16 +72,14 @@ jobs:
 
       - name: make vet
         run: make vet
-  shell-linters:
-    name: Shellcheck and shfmt
-    runs-on: ubuntu-22.04
+  shellcheck:
+    name: Shellcheck
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - uses: ludeeus/action-shellcheck@master
-      - uses: mfinelli/setup-shfmt@v2
-      - run: shfmt -d *.sh script
   yamllint:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
       - name: yaml-lint
@@ -96,31 +99,35 @@ jobs:
 
   unit-tests:
     name: Run Unit Tests
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     env:
       SHELL: /bin/bash
-      KUBECONFIG: '/home/runner/.kube/config'
-      PFLT_DOCKERCONFIG: '/home/runner/.docker/config'
+      KUBECONFIG: '/home/tnf/.kube/config'
+      PFLT_DOCKERCONFIG: '/home/tnf/.docker/config'
 
     steps:
-      - name: Write temporary docker file
-        run: |
-          mkdir -p /home/runner/.docker
-          touch ${PFLT_DOCKERCONFIG}
-          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
-
-      - name: Set up Go 1.20
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.20.2
-
-      - name: Disable default go problem matcher
-        run: echo "::remove-matcher owner=go::"
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
         with:
           ref: ${{ github.sha }}
+
+      # - name: Setup the 'step' with shared resources
+      #   uses: ./.github/actions/setup
+      - name: Write temporary docker file
+        run: |
+          mkdir -p /home/tnf/.docker
+          touch ${PFLT_DOCKERCONFIG}
+          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
+        shell: bash
+
+      - name: Set up Go 1.20
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.1
+
+      - name: Disable default go problem matcher
+        run: echo "::remove-matcher owner=go::"
+        shell: bash
 
       - name: Run Tests
         run: make test
@@ -145,34 +152,38 @@ jobs:
 
   smoke-tests-local:
     name: Run Local Smoke Tests
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     env:
       SHELL: /bin/bash
-      KUBECONFIG: '/home/runner/.kube/config'
-      PFLT_DOCKERCONFIG: '/home/runner/.docker/config'
+      KUBECONFIG: '/home/tnf/.kube/config'
+      PFLT_DOCKERCONFIG: '/home/tnf/.docker/config'
 
     steps:
-      - name: Write temporary docker file
-        run: |
-          mkdir -p /home/runner/.docker
-          touch ${PFLT_DOCKERCONFIG}
-          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
-
-      - name: Set up Go 1.20
-        uses: actions/setup-go@v4
-        with:
-          go-version: 1.20.2
-
-      - name: Disable default go problem matcher
-        run: echo "::remove-matcher owner=go::"
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
         with:
           ref: ${{ github.sha }}
 
-      # Update the CNF containers, helm charts and operators DB
+      # - name: Setup the 'step' with shared resources
+      #   uses: ./.github/actions/setup
 
+      - name: Write temporary docker file
+        run: |
+          mkdir -p /home/tnf/.docker
+          touch ${PFLT_DOCKERCONFIG}
+          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
+        shell: bash
+
+      - name: Set up Go 1.20
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.1
+
+      - name: Disable default go problem matcher
+        run: echo "::remove-matcher owner=go::"
+        shell: bash
+
+      # Update the CNF containers, helm charts and operators DB
       - name: Update the CNF DB
         run: |
           docker pull ${REGISTRY}/${OCT_IMAGE_NAME}:${OCT_IMAGE_TAG}
@@ -193,15 +204,17 @@ jobs:
           path: cnf-certification-test-partner
           ref: kind_update
 
-      - name: Start the Kind cluster for `local-test-infra`
-        uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster
-        with:
-          working_directory: cnf-certification-test-partner
+      - name: Bootstrap the Kind and OC/Kubectl binaries for the `local-test-infra`
+        run: make bootstrap-cluster-fedora-local
+        working-directory: cnf-certification-test-partner
 
       - name: Create `local-test-infra` OpenShift resources
-        uses: ./cnf-certification-test-partner/.github/actions/create-local-test-infra-resources
-        with:
-          working_directory: cnf-certification-test-partner
+        run: make rebuild-cluster
+        working-directory: cnf-certification-test-partner
+
+      - name: Install partner resources
+        run: make install
+        working-directory: cnf-certification-test-partner
 
       # Perform smoke tests.
       - name: 'Test: Run test suites'
@@ -219,21 +232,20 @@ jobs:
             cnf-certification-test/results.html
             cnf-certification-test/tnf-execution.log
 
+      - name: Delete partner resources
+        run: make clean
+        if: always()
+        working-directory: cnf-certification-test-partner
+
   smoke-tests-container:
     name: Run Container Smoke Tests
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     env:
       SHELL: /bin/bash
-      KUBECONFIG: '/home/runner/.kube/config'
-      PFLT_DOCKERCONFIG: '/home/runner/.docker/config'
+      KUBECONFIG: '/home/tnf/.kube/config'
+      PFLT_DOCKERCONFIG: '/home/tnf/.docker/config'
 
     steps:
-      - name: Write temporary docker file
-        run: |
-          mkdir -p /home/runner/.docker
-          touch ${PFLT_DOCKERCONFIG}
-          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
-
       # Create a Kind cluster for testing.
       - name: Check out `cnf-certification-test-partner`
         uses: actions/checkout@v3
@@ -242,22 +254,33 @@ jobs:
           path: cnf-certification-test-partner
           ref: kind_update
 
-      - name: Start the Kind cluster for `local-test-infra`
-        uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster
-        with:
-          working_directory: cnf-certification-test-partner
+      # - name: Bootstrap the Kind and OC/Kubectl binaries for the `local-test-infra`
+      #   run: make bootstrap-cluster-fedora-local
+      #   working-directory: cnf-certification-test-partner
 
-      - name: Create `local-test-infra` OpenShift resources
-        uses: ./cnf-certification-test-partner/.github/actions/create-local-test-infra-resources
-        with:
-          working_directory: cnf-certification-test-partner
+      # - name: Create `local-test-infra` OpenShift resources
+      #   run: make rebuild-cluster
+      #   working-directory: cnf-certification-test-partner
+
+      - name: Install partner resources
+        run: make install
+        working-directory: cnf-certification-test-partner
             
+      - name: Write temporary docker file
+        run: |
+          mkdir -p /home/tnf/.docker
+          touch ${PFLT_DOCKERCONFIG}
+          echo '{ "auths": {} }' >> ${PFLT_DOCKERCONFIG}
+        shell: bash
 
-      # Perform smoke tests using a TNF container.
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+      - name: Set up Go 1.20
+        uses: actions/setup-go@v3
         with:
-          ref: ${{ github.sha }}
+          go-version: 1.20.1
+
+      - name: Disable default go problem matcher
+        run: echo "::remove-matcher owner=go::"
+        shell: bash
 
       - name: Build the `cnf-certification-test` image
         run: |
@@ -276,6 +299,11 @@ jobs:
           
       - name: 'Test: Run Smoke Tests in a TNF container'
         run: TNF_LOG_LEVEL=${TNF_SMOKE_TESTS_LOG_LEVEL} ./run-tnf-container.sh ${{ env.TESTING_CMD_PARAMS }} -l "common"
+
+      - name: Delete partner resources
+        run: make clean
+        if: always()
+        working-directory: cnf-certification-test-partner
 
       - name: Upload container test results as an artifact
         uses: actions/upload-artifact@v3
