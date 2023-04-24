@@ -215,7 +215,7 @@ jobs:
           path: cnf-certification-test-partner
 
       - name: Start the Kind cluster for `local-test-infra`
-        uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster
+        uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster-ubuntu
         with:
           working_directory: cnf-certification-test-partner
 
@@ -261,9 +261,10 @@ jobs:
         with:
           repository: test-network-function/cnf-certification-test-partner
           path: cnf-certification-test-partner
+          ref: add_ubuntu
 
       - name: Start the Kind cluster for `local-test-infra`
-        uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster
+        uses: ./cnf-certification-test-partner/.github/actions/start-k8s-cluster-ubuntu
         with:
           working_directory: cnf-certification-test-partner
 
