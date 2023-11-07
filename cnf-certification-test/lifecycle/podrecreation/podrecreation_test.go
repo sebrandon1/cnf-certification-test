@@ -137,3 +137,36 @@ func TestCordonHelper(t *testing.T) {
 		}
 	}
 }
+
+func TestSkipDaemonPod(t *testing.T) {
+	generatePod := func(ownerKind string) *corev1.Pod {
+		return &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-pod",
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind: ownerKind,
+					},
+				},
+			},
+		}
+	}
+
+	testCases := []struct {
+		testPods *corev1.Pod
+		expected bool
+	}{
+		{
+			testPods: generatePod(DeploymentString),
+			expected: false,
+		},
+		{
+			testPods: generatePod(DaemonSetString),
+			expected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		assert.Equal(t, tc.expected, skipDaemonPod(tc.testPods))
+	}
+}

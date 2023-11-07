@@ -219,14 +219,19 @@ func WaitForAllPodSetsReady(env *provider.TestEnvironment, timeout time.Duration
 
 func GetAllNodesForAllPodSets(pods []*provider.Pod) (nodes map[string]bool) {
 	nodes = make(map[string]bool)
-	for _, put := range pods {
-		for _, or := range put.OwnerReferences {
-			if or.Kind != ReplicaSetString && or.Kind != StatefulsetString {
-				continue
+
+	// Iterate over the pods and add their nodes to the map.
+	for _, pod := range pods {
+		// Check if the pod is owned by a ReplicaSet or StatefulSet.
+		if pod.OwnerReferences != nil {
+			for _, owner := range pod.OwnerReferences {
+				if owner.Kind == ReplicaSetString || owner.Kind == StatefulsetString {
+					nodes[pod.Spec.NodeName] = true
+					break
+				}
 			}
-			nodes[put.Spec.NodeName] = true
-			break
 		}
 	}
+
 	return nodes
 }

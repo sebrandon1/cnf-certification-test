@@ -28,16 +28,23 @@ func IsManaged(podSetName string, managedPodSet []configuration.ManagedDeploymen
 }
 
 func CheckOwnerReference(ownerReference []apiv1.OwnerReference, crdFilter []configuration.CrdFilter, crds []*apiextv1.CustomResourceDefinition) bool {
-	for _, owner := range ownerReference {
-		for _, aCrd := range crds {
-			if aCrd.Spec.Names.Kind == owner.Kind {
-				for _, crdF := range crdFilter {
-					if strings.HasSuffix(aCrd.Name, crdF.NameSuffix) {
-						return crdF.Scalable
-					}
-				}
+	// Create a map to store the scalable status of each CRD.
+	crdScalableMap := make(map[string]bool)
+	for _, crd := range crds {
+		for _, crdF := range crdFilter {
+			if strings.HasSuffix(crd.Name, crdF.NameSuffix) {
+				crdScalableMap[crd.Spec.Names.Kind] = crdF.Scalable
+				break
 			}
 		}
 	}
+
+	// Iterate over the owner references and check if any of them are scalable CRDs.
+	for _, owner := range ownerReference {
+		if crdScalableMap[owner.Kind] {
+			return true
+		}
+	}
+
 	return false
 }

@@ -46,15 +46,14 @@ func NewOwnerReference(put *corev1.Pod) *OwnerReference {
 // o.result
 func (o *OwnerReference) RunTest() {
 	for _, k := range o.put.OwnerReferences {
-		logrus.Traceln("kind is ", k.Kind)
-		if k.Kind == statefulSet || k.Kind == replicaSet {
-			o.result = testhelper.SUCCESS
-		} else {
+		if k.Kind != statefulSet && k.Kind != replicaSet {
 			logrus.Error("Pod ", o.put.Name, " has owner of type ", k.Kind)
 			o.result = testhelper.FAILURE
 			return
 		}
 	}
+
+	o.result = testhelper.SUCCESS
 }
 
 // GetResults return result of the OwnerReference type

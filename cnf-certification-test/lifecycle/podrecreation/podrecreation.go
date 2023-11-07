@@ -100,12 +100,16 @@ func CountPodsWithDelete(pods []*provider.Pod, nodeName, mode string) (count int
 }
 
 func skipDaemonPod(pod *corev1.Pod) bool {
-	for _, or := range pod.OwnerReferences {
-		if or.Kind == DaemonSetString {
-			return true
-		}
+	// Check if the pod has any owners.
+	if len(pod.OwnerReferences) == 0 {
+		return false
 	}
-	return false
+
+	// Get the first owner of the pod.
+	or := pod.OwnerReferences[0]
+
+	// Check if the owner kind is DaemonSet.
+	return or.Kind == DaemonSetString
 }
 
 func deletePod(pod *corev1.Pod, mode string, wg *sync.WaitGroup) error {
@@ -160,7 +164,7 @@ func waitPodDeleted(ns, podName string, timeout int64, watcher watch.Interface) 
 				return
 			}
 		case <-time.After(time.Duration(timeout) * time.Second):
-			logrus.Infof("watch for pod deletion timedout after %d seconds", timeout)
+			logrus.Infof("watch for pod deletion timeout after %d seconds", timeout)
 			return
 		}
 	}
