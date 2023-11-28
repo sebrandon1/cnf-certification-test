@@ -48,13 +48,17 @@ func Run(labelsFilter, outputFolder string, timeout time.Duration) {
 	claimOutputFile := filepath.Join(outputFolder, results.ClaimFileName)
 
 	logrus.Infof("Running checks matching labels expr %q with timeout %v", labelsFilter, timeout)
+	startTime := time.Now()
 	err = checksdb.RunChecks(labelsFilter, timeout)
 	if err != nil {
 		logrus.Error(err)
 	}
+	endTime := time.Now()
+	logrus.Infof("Finished running checks in %v", endTime.Sub(startTime))
 
 	// Marshal the claim and output to file
 	claimBuilder.Build(claimOutputFile)
+	claimBuilder.ToJUnitXML("xmlfile.xml", startTime, endTime)
 
 	// Send claim file to the collector if specified by env var
 	if configuration.GetTestParameters().EnableDataCollection {

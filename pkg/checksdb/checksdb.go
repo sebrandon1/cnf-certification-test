@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/test-network-function/cnf-certification-test/cnf-certification-test/identifiers"
 	"github.com/test-network-function/cnf-certification-test/pkg/claim"
+	"github.com/test-network-function/cnf-certification-test/pkg/stringhelper"
 )
 
 var (
@@ -131,4 +132,35 @@ func GetReconciledResults() map[string]interface{} {
 		resultMap[key] = val
 	}
 	return resultMap
+}
+
+func GetResults() map[string]claim.Result {
+	return resultsDB
+}
+
+func GetTestSuites() []string {
+	// Collect all of the unique test suites from the resultsDB
+	var suites []string
+	for key, _ := range resultsDB {
+
+		// Only append to the slice if it does not already exist
+		if !stringhelper.StringInSlice(suites, key, false) {
+			suites = append(suites, key)
+		}
+	}
+	return suites
+}
+
+func GetTotalTests() int {
+	return len(resultsDB)
+}
+
+func GetTestsCountByState(state string) int {
+	count := 0
+	for _, results := range resultsDB {
+		if results.State == state {
+			count++
+		}
+	}
+	return count
 }
